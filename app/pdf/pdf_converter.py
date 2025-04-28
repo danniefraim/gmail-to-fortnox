@@ -14,6 +14,84 @@ class PdfConverter:
         # Create output directory if it doesn't exist
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
+    def convert_email_to_pdf(self, subject, sender, body, attachments=None):
+        """Convert email data to PDF and save it
+        
+        Args:
+            subject (str): Email subject
+            sender (str): Email sender
+            body (str): Email body content (HTML or text)
+            attachments (list, optional): List of attachments
+            
+        Returns:
+            Path to the saved PDF file
+        """
+        # Create a filename from email subject
+        safe_subject = "".join(c for c in subject if c.isalnum() or c in ' -_').strip()
+        safe_subject = safe_subject[:30]  # Limit length
+        
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{safe_subject}_{timestamp}.pdf"
+        output_path = self.output_dir / filename
+        
+        # Create HTML content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>{subject}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .email-header {{ border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }}
+                .email-metadata {{ color: #666; font-size: 0.9em; }}
+                .email-content {{ margin-top: 20px; }}
+                .attachments {{ margin-top: 20px; padding-top: 10px; border-top: 1px dashed #ccc; }}
+                .attachment {{ background: #f8f8f8; padding: 5px; margin: 5px 0; border-radius: 3px; }}
+            </style>
+        </head>
+        <body>
+            <div class="email-header">
+                <h2>{subject}</h2>
+                <div class="email-metadata">
+                    <p><strong>From:</strong> {sender}</p>
+                    <p><strong>Date:</strong> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                </div>
+            </div>
+            <div class="email-content">
+                {body}
+            </div>
+        """
+        
+        # Add attachments info if any
+        if attachments and len(attachments) > 0:
+            html_content += """
+            <div class="attachments">
+                <h3>Attachments:</h3>
+            """
+            
+            for attachment in attachments:
+                html_content += f"""
+                <div class="attachment">
+                    <strong>Filename:</strong> {attachment.get('filename', 'Unknown')}
+                    <br>
+                    <strong>Type:</strong> {attachment.get('mime_type', 'Unknown')}
+                </div>
+                """
+            
+            html_content += "</div>"
+        
+        # Close the HTML structure
+        html_content += """
+        </body>
+        </html>
+        """
+        
+        # Convert to PDF
+        HTML(string=html_content).write_pdf(output_path)
+        
+        return output_path
+    
     def email_to_pdf(self, email_content):
         """Convert email content to PDF and save it
         

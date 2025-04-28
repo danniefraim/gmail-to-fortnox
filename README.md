@@ -1,34 +1,37 @@
-# Gmail to Fortnox Integration
+# Gmail to Accounting Integration
 
-A utility script that automates the process of finding specific emails in Gmail and creating accounting verifications in Fortnox. This can be used for instance to automatically add recurring company card charged to the accounting, or to take certain expenses and book them as a liability to yourself. I created this because Apple doesn't allow me to separate business expenses and private expenses when buying things in App Store and so on. The script was created almost entirely using Cursor's AI agent mode, so use it with care. If you make any improvements, feel free to submit them as a PR. If you like the script and find it useful, drop me a line.
+A utility script that automates the process of finding specific emails in Gmail and creating accounting verifications in accounting systems like Fortnox or Kleer. This can be used for instance to automatically add recurring company card charged to the accounting, or to take certain expenses and book them as a liability to yourself. I created this because Apple doesn't allow me to separate business expenses and private expenses when buying things in App Store and so on. The script was created almost entirely using Cursor's AI agent mode, so use it with care. If you make any improvements, feel free to submit them as a PR. If you like the script and find it useful, drop me a line.
 
 ## Features
 
 - Connect to Gmail using OAuth2 authentication
-- Connect to Fortnox using OAuth2 authentication
+- Connect to accounting systems (Fortnox, Kleer) using OAuth2 authentication
 - Search for emails matching specific criteria (sender, subject, body content)
 - Extract amounts from emails using regex patterns
 - Calculate voucher entries dynamically using extracted values
 - Convert matched emails to PDF
-- Create verifications in Fortnox with the correct accounting entries
-- Attach the email PDF to the Fortnox verification
+- Create verifications in the accounting system with the correct entries
+- Attach the email PDF to the verification
 - Track processed emails to avoid duplicates
 - Console-based UI that guides the user through the process
 - Interactive rule creation mode with pattern testing
 - Extensible configuration for multiple email rules and accounting templates
+- Support for multiple accounting backends (Fortnox, Kleer)
 
 ## Requirements
 
 - Python 3.7+
 - Gmail account with API access
-- Fortnox account with API access
+- Account with one of the supported accounting systems:
+  - Fortnox (requires API access)
+  - Kleer (requires API access)
 
 ## Installation
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/gmail-to-fortnox.git
-   cd gmail-to-fortnox
+   git clone https://github.com/yourusername/gmail-to-accounting.git
+   cd gmail-to-accounting
    ```
 
 2. Create a virtual environment and install dependencies:
@@ -51,17 +54,28 @@ A utility script that automates the process of finding specific emails in Gmail 
    - Create OAuth credentials (Desktop app)
    - Download the credentials JSON file and save it as `app/config/credentials.json`
 
-4. Set up Fortnox API access:
+4. Set up your accounting system API access:
+   
+   **For Fortnox:**
    - Log in to your Fortnox account
    - Go to the developer portal in the menu (if you do not have a developer license activated you need to contact Fortnox support about this)
    - Create a new application
    - Set the redirect URI to `http://localhost:8000/callback`
    - Request API scopes for `voucher` and `archive`
    - Note your Client ID and Client Secret and add them to your configuration
+   
+   **For Kleer:**
+   - Log in to your Kleer account
+   - Navigate to API settings in developer options
+   - Create a new application
+   - Set the redirect URI to `http://localhost:8001/callback`
+   - Request API scopes for `vouchers:read`, `vouchers:write`, `accounts:read`, and `files:write`
+   - Note your Client ID and Client Secret and add them to your configuration
 
 5. Create a configuration file:
    - Copy the example config file: `cp config.example.json app/config/config.json`
-   - Edit `app/config/config.json` with your Fortnox client ID and client secret
+   - Edit `app/config/config.json` with your accounting system client ID and client secret
+   - Set the `accounting.type` to your preferred system (`fortnox` or `kleer`)
    - You can run `python main.py --create-rule` to interactively create a new config rule
 
 ## Usage
@@ -73,11 +87,11 @@ python main.py
 
 The script will:
 1. Connect to Gmail and search for matching emails (prompting for authentication if needed)
-2. Connect to Fortnox (opening a browser for authentication if needed)
+2. Connect to your accounting system (opening a browser for authentication if needed)
 3. For each matching email, prompt for confirmation
 4. Convert the email to PDF
-5. Show the verification details that will be created in Fortnox
-6. Create the verification in Fortnox (with your confirmation)
+5. Show the verification details that will be created in your accounting system
+6. Create the verification (with your confirmation)
 7. Mark the email as processed to avoid duplicate handling
 
 ## Authentication Flow
@@ -85,13 +99,13 @@ The script will:
 ### Gmail Authentication
 The first time you run the script, it will open a browser window asking you to sign in to your Google account and authorize the application to access your Gmail. After successful authorization, a token will be saved to `app/config/token.json` for future use.
 
-### Fortnox Authentication
+### Accounting System Authentication
 The first time you run the script, it will:
-1. Open a browser window to the Fortnox authentication page
+1. Open a browser window to the accounting system's authentication page
 2. Start a local web server to receive the authorization callback
-3. After you authorize the application in your browser, Fortnox will redirect to the callback URL
+3. After you authorize the application in your browser, the accounting system will redirect to the callback URL
 4. The application will exchange the authorization code for access and refresh tokens
-5. The tokens will be saved to `app/config/fortnox_token.json` for future use
+5. The tokens will be saved to `app/config/[system]_token.json` for future use
 
 Both tokens will be automatically refreshed when they expire.
 
@@ -100,7 +114,7 @@ Both tokens will be automatically refreshed when they expire.
 The `app/config/config.json` file allows you to configure:
 
 - Gmail API credentials location
-- Fortnox OAuth credentials and redirect URI
+- Accounting system selection and OAuth credentials
 - Email rules that define what to look for in emails
 - Data extraction patterns to extract values from emails
 - Accounting formulas that define how to create verifications
@@ -113,11 +127,20 @@ Example configuration:
     "token_file": "token.json",
     "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
   },
+  "accounting": {
+    "type": "fortnox"
+  },
   "fortnox": {
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
+    "client_id": "YOUR_FORTNOX_CLIENT_ID",
+    "client_secret": "YOUR_FORTNOX_CLIENT_SECRET",
     "redirect_uri": "http://localhost:8000/callback",
     "base_url": "https://api.fortnox.se/3"
+  },
+  "kleer": {
+    "client_id": "YOUR_KLEER_CLIENT_ID",
+    "client_secret": "YOUR_KLEER_CLIENT_SECRET",
+    "redirect_uri": "http://localhost:8001/callback",
+    "base_url": "https://api.kleer.se"
   },
   "email_rules": [
     {
@@ -143,6 +166,22 @@ Example configuration:
   ]
 }
 ```
+
+### Switching Between Accounting Systems
+
+To switch between accounting systems:
+
+1. Update the `accounting.type` field in your config.json:
+   ```json
+   "accounting": {
+     "type": "kleer"  // or "fortnox"
+   }
+   ```
+
+2. Or set the `ACCOUNTING_TYPE` environment variable:
+   ```
+   export ACCOUNTING_TYPE=kleer
+   ```
 
 ## Email Rule Configuration
 
@@ -185,7 +224,7 @@ In the `config.json` file, you can define rules to match emails:
   - **pattern**: Regex pattern with a capturing group to extract values from text
   - **html_pattern**: Optional regex pattern for matching against HTML content
   - **default**: Default value to use if no match is found
-- **accounting**: Definition of how to create the voucher in Fortnox
+- **accounting**: Definition of how to create the voucher in the accounting system
   - **description**: Description for the voucher
   - **series**: Voucher series to use (e.g., "F")
   - **entries**: Array of accounting entries with:

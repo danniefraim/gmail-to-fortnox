@@ -18,6 +18,9 @@ def load_config():
     else:
         config = {}
     
+    # Default accounting system type
+    accounting_type = os.getenv('ACCOUNTING_TYPE', config.get('accounting', {}).get('type', 'fortnox'))
+    
     # Environment variables override JSON config
     config.update({
         'gmail': {
@@ -25,11 +28,20 @@ def load_config():
             'token_file': os.getenv('GMAIL_TOKEN_FILE', config.get('gmail', {}).get('token_file', 'token.json')),
             'scopes': ['https://www.googleapis.com/auth/gmail.readonly'],
         },
+        'accounting': {
+            'type': accounting_type
+        },
         'fortnox': {
             'client_id': os.getenv('FORTNOX_CLIENT_ID', config.get('fortnox', {}).get('client_id')),
             'client_secret': os.getenv('FORTNOX_CLIENT_SECRET', config.get('fortnox', {}).get('client_secret')),
             'redirect_uri': os.getenv('FORTNOX_REDIRECT_URI', config.get('fortnox', {}).get('redirect_uri', 'http://localhost:8000/callback')),
             'base_url': os.getenv('FORTNOX_BASE_URL', config.get('fortnox', {}).get('base_url', 'https://api.fortnox.se/3')),
+        },
+        'kleer': {
+            'client_id': os.getenv('KLEER_CLIENT_ID', config.get('kleer', {}).get('client_id')),
+            'client_secret': os.getenv('KLEER_CLIENT_SECRET', config.get('kleer', {}).get('client_secret')),
+            'redirect_uri': os.getenv('KLEER_REDIRECT_URI', config.get('kleer', {}).get('redirect_uri', 'http://localhost:8001/callback')),
+            'base_url': os.getenv('KLEER_BASE_URL', config.get('kleer', {}).get('base_url', 'https://api.kleer.se')),
         },
         'email_rules': config.get('email_rules', [
             {

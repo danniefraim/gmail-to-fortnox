@@ -4,12 +4,22 @@
     "token_file": "token.json",
     "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
   },
+  "accounting": {
+    "type": "fortnox"
+  },
   "fortnox": {
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
+    "client_id": "YOUR_FORTNOX_CLIENT_ID",
+    "client_secret": "YOUR_FORTNOX_CLIENT_SECRET",
     "redirect_uri": "http://localhost:8000/callback",
     "base_url": "https://api.fortnox.se/3",
     "scopes": ["bookkeeping", "archive", "connectfile"]
+  },
+  "kleer": {
+    "client_id": "YOUR_KLEER_CLIENT_ID",
+    "client_secret": "YOUR_KLEER_CLIENT_SECRET",
+    "redirect_uri": "http://localhost:8001/callback",
+    "base_url": "https://api.kleer.se",
+    "scopes": ["vouchers:read", "vouchers:write", "accounts:read", "files:write"]
   },
   "email_rules": [
     {

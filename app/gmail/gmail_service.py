@@ -43,6 +43,18 @@ class GmailService:
         
         return build('gmail', 'v1', credentials=creds)
     
+    def search_messages(self, query, max_results=500):
+        """Search for emails matching the query string (alias for search_emails)
+        
+        Args:
+            query (str): Gmail search query
+            max_results (int): Maximum number of results to return
+            
+        Returns:
+            list: List of message dictionaries with id and threadId
+        """
+        return self.search_emails(query, max_results)
+    
     def search_emails(self, query, max_results=500):
         """Search for emails matching the query string
         
@@ -120,6 +132,103 @@ class GmailService:
             print(f"Error getting email {msg_id}")
             # Return a minimal message that won't cause errors
             return {'id': msg_id, 'payload': {'headers': [], 'body': {'data': ''}}}
+    
+    def get_message(self, msg_id):
+        """Alias for get_email method for compatibility
+        
+        Args:
+            msg_id (str): Email ID from Gmail API
+            
+        Returns:
+            dict: Full email message
+        """
+        return self.get_email(msg_id)
+    
+    def get_email_body(self, message):
+        """Extract the text body from a message
+        
+        Args:
+            message (dict): Full email message from Gmail API
+            
+        Returns:
+            str: Email body text
+        """
+        # First get the full content
+        content = self.get_email_content(message)
+        
+        # Prefer HTML content since it might have more information
+        if content.get('body_html'):
+            return content['body_html']
+        
+        # Fall back to text content
+        return content.get('body_text', '')
+    
+    def get_attachments(self, message):
+        """Extract attachments from a message
+        
+        Args:
+            message (dict): Full email message from Gmail API
+            
+        Returns:
+            list: List of attachment dictionaries with filename and data
+        """
+        attachments = []
+        
+        try:
+            parts = []
+            
+            # Get parts from the payload
+            if 'payload' in message:
+                parts = self._get_parts_with_attachments(message['payload'])
+            
+            # Extract attachments from parts
+            for part in parts:
+                if 'filename' in part and part['filename'] and 'body' in part and 'attachmentId' in part['body']:
+                    # Get the attachment ID
+                    attachment_id = part['body']['attachmentId']
+                    
+                    # Get the attachment data
+                    attachment = self.service.users().messages().attachments().get(
+                        userId='me',
+                        messageId=message['id'],
+                        id=attachment_id
+                    ).execute()
+                    
+                    # Decode the data
+                    file_data = base64.urlsafe_b64decode(attachment['data'])
+                    
+                    # Add to attachments list
+                    attachments.append({
+                        'filename': part['filename'],
+                        'data': file_data,
+                        'mime_type': part.get('mimeType', 'application/octet-stream')
+                    })
+        except Exception as e:
+            print(f"Error getting attachments: {e}")
+        
+        return attachments
+    
+    def _get_parts_with_attachments(self, payload):
+        """Recursively extract all parts from message payload that could have attachments
+        
+        Args:
+            payload (dict): Message payload
+            
+        Returns:
+            list: List of parts that might have attachments
+        """
+        parts = []
+        
+        # If this part has a filename, it's an attachment
+        if 'filename' in payload and payload['filename']:
+            parts.append(payload)
+        
+        # If this part has sub-parts
+        if 'parts' in payload:
+            for part in payload['parts']:
+                parts.extend(self._get_parts_with_attachments(part))
+        
+        return parts
     
     def get_email_content(self, message):
         """Extract email content (subject, sender, body, date) from a message
@@ -225,7 +334,7 @@ class GmailService:
         
         return parts
     
-    def find_matching_emails(self, rules, processed_emails=None, ignored_emails=None, months_back=1, debug=False):
+    def find_matching_emails(self, rules, processed_emails=None, ignored_emails=None, months_back=3, debug=False):
         """Search for emails matching the rules
         
         Args:

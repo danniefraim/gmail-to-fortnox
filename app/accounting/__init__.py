@@ -1,0 +1,3 @@
+"""
+Accounting system integration package
+""" 
