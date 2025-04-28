@@ -1,0 +1,7 @@
+[project]
+name = "gmail-to-fortnox"
+version = "0.1.0"
+description = "Utility application to get e-mails from GMail and create accounting in Fortnox"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []

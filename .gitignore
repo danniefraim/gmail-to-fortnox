@@ -1,0 +1,35 @@
+# Environment and configuration
+.env
+.venv
+env/
+venv/
+app/config/*.json
+
+# Processed data
+app/data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Operating system files
+.DS_Store
+Thumbs.db

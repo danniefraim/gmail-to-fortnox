@@ -1,0 +1,61 @@
+{
+  "gmail": {
+    "credentials_file": "credentials.json",
+    "token_file": "token.json",
+    "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
+  },
+  "fortnox": {
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "redirect_uri": "http://localhost:8000/callback",
+    "base_url": "https://api.fortnox.se/3",
+    "scopes": ["bookkeeping", "archive", "connectfile"]
+  },
+  "email_rules": [
+    {
+      "sender": "no_reply@email.apple.com",
+      "subject": "",
+      "body_contains": "iCloud+ med 6 TB lagrings­utrymme",
+      "data_extraction": {
+        "total_amount": {
+          "pattern": "(?:betalat|avgift|SEK|kr)[\\s:]*([0-9]+[,.]?[0-9]*)",
+          "default": 399.00
+        }
+      },
+      "accounting": {
+        "description": "Apple iCloud",
+        "series": "F",
+        "entries": [
+          {"account": "6540", "debit": "total_amount * 0.8", "credit": 0},
+          {"account": "2641", "debit": "total_amount * 0.2", "credit": 0},
+          {"account": "2820", "debit": 0, "credit": "total_amount"}
+        ]
+      }
+    },
+    {
+      "sender": "another-example@example.com",
+      "subject": "Monthly Subscription",
+      "body_contains": ["Your subscription fee", "Payment due"],
+      "data_extraction": {
+        "base_amount": {
+          "pattern": "Amount: \\$([0-9]+\\.?[0-9]*)",
+          "html_pattern": "<td[^>]*>\\$([0-9]+\\.?[0-9]*)</td>",
+          "default": 100.00
+        },
+        "tax_percent": {
+          "pattern": "Tax: ([0-9]+)%",
+          "default": 25
+        }
+      },
+      "accounting": {
+        "description": "Example Subscription",
+        "series": "F",
+        "entries": [
+          {"account": "6500", "debit": "base_amount", "credit": 0},
+          {"account": "2641", "debit": "base_amount * (tax_percent/100)", "credit": 0},
+          {"account": "2820", "debit": 0, "credit": "base_amount * (1 + tax_percent/100)"}
+        ]
+      }
+    }
+  ]
+}
