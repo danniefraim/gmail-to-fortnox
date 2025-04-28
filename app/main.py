@@ -330,7 +330,7 @@ def main(debug=False, dry_run=False, ignore_processed=False):
             rules=config['email_rules'],
             processed_emails=processed_emails,
             ignored_emails=ignored_emails,
-            months_back=14,
+            months_back=3,
             debug=debug
         )
         
