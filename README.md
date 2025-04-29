@@ -27,7 +27,7 @@ A utility script that automates the process of finding specific emails in Gmail 
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/gmail-to-fortnox.git
+   git clone https://github.com/danniefraim/gmail-to-fortnox.git
    cd gmail-to-fortnox
    ```
 
